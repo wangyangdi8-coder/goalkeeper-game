@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07110f">
+  <meta name="description" content="画出你的门将，用一笔预判足球史上的经典射门。">
+  <title>门神模拟器 — 这一球你来守</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307110f'/%3E%3Cpath d='M10 47V16h44v31M12 20h40M32 18v29' fill='none' stroke='%23e7ff4f' stroke-width='5'/%3E%3Ccircle cx='44' cy='30' r='7' fill='%23ff6a3d'/%3E%3C/svg%3E">
+  <style>
+    :root{--ink:#f4f6ed;--muted:#9aa69d;--night:#07110f;--panel:#0c1916;--panel2:#10231e;--lime:#e7ff4f;--orange:#ff6a3d;--line:rgba(231,255,79,.19);--shadow:0 24px 80px rgba(0,0,0,.38)}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--night);color:var(--ink);font-family:Inter,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif}body{overflow-x:hidden}
+    button{font:inherit}button:focus-visible{outline:3px solid white;outline-offset:3px}
+    .noise{position:fixed;inset:0;pointer-events:none;opacity:.14;z-index:20;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E")}
+    .app{min-height:100vh;display:grid;grid-template-rows:auto 1fr;position:relative}.app:before{content:"";position:fixed;inset:-20%;background:radial-gradient(circle at 65% 5%,rgba(231,255,79,.09),transparent 28%),radial-gradient(circle at 10% 90%,rgba(23,117,84,.18),transparent 35%);pointer-events:none}
+    header{height:76px;padding:0 clamp(18px,4vw,58px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:2}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:-.05em;font-size:1.35rem}.brand-mark{width:34px;height:34px;border:2px solid var(--lime);border-bottom-width:5px;position:relative}.brand-mark:after{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:var(--orange);right:3px;top:7px;box-shadow:0 0 16px var(--orange)}
+    .brand span{color:var(--lime)}.hud{display:flex;gap:26px;align-items:center}.hud-item{display:grid;gap:2px;text-align:right}.hud-label{font-size:.7rem;color:var(--muted);letter-spacing:.16em}.hud-value{font-weight:800;font-variant-numeric:tabular-nums}
+    main{width:min(1500px,100%);margin:auto;padding:clamp(16px,3vw,42px);display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr);gap:clamp(16px,2.5vw,34px);align-items:stretch;position:relative;z-index:1}
+    .brief{background:linear-gradient(150deg,rgba(16,35,30,.96),rgba(8,20,17,.94));border:1px solid rgba(255,255,255,.09);padding:clamp(22px,3vw,36px);border-radius:4px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:580px}
+    .eyebrow{font-size:.72rem;font-weight:800;color:var(--lime);letter-spacing:.18em;text-transform:uppercase}.shot-no{font-family:Georgia,serif;font-style:italic;color:rgba(255,255,255,.17);font-size:clamp(4rem,8vw,7rem);line-height:.85;margin:20px 0 8px;letter-spacing:-.08em}.shot-title{font-size:clamp(1.8rem,3vw,3.1rem);letter-spacing:-.06em;line-height:.98;margin:0 0 14px}.shot-meta{color:var(--muted);font-size:.88rem;line-height:1.7}.rule{height:1px;background:linear-gradient(90deg,var(--lime),transparent);margin:24px 0}
+    .clue{border-left:3px solid var(--orange);padding-left:14px}.clue-label{font-size:.7rem;color:var(--orange);font-weight:900;letter-spacing:.16em}.clue p{margin:8px 0 0;line-height:1.55;font-size:1rem}
+    .stats{display:grid;gap:13px;margin-top:26px}.stat-row{display:grid;grid-template-columns:78px 1fr 42px;gap:10px;align-items:center;font-size:.78rem;color:var(--muted)}.track{height:5px;background:rgba(255,255,255,.09);overflow:hidden}.track i{height:100%;display:block;background:var(--lime);transform-origin:left;transition:transform .6s ease}.stat-row b{text-align:right;color:var(--ink)}
+    .brief-bottom{margin-top:auto;padding-top:28px}.tiny{color:var(--muted);font-size:.76rem;line-height:1.55;margin:0}
+    .game-shell{min-width:0;display:flex;flex-direction:column;gap:12px}.stagebar{display:flex;align-items:center;min-height:34px;gap:12px}.instruction{font-weight:800;letter-spacing:-.02em}.instruction.history{max-width:920px;padding:4px 0 6px;color:#cbd4ce;font-size:.9rem;font-weight:600;line-height:1.55;letter-spacing:0}
+    .pitch{position:relative;min-height:0;aspect-ratio:16/10;background:#0a3a29;border:1px solid rgba(255,255,255,.13);box-shadow:var(--shadow);overflow:hidden;touch-action:none;cursor:crosshair}.pitch:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.022) 50%,transparent 50%);background-size:14% 100%;pointer-events:none}.pitch canvas{display:block;width:100%;height:100%;position:relative;z-index:1}
+    .flash{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;opacity:0;background:rgba(7,17,15,.7);transition:opacity .25s}.flash.show{opacity:1}.result-word{font-size:clamp(4rem,10vw,10rem);font-weight:1000;letter-spacing:-.09em;transform:rotate(-5deg);text-shadow:0 8px 0 rgba(0,0,0,.25)}.result-word.save{color:var(--lime)}.result-word.goal{color:var(--orange)}.result-sub{display:block;text-align:center;font-size:1rem;letter-spacing:.12em;margin-top:10px;color:white;transform:rotate(5deg)}
+    .controls{display:flex;align-items:center;gap:10px;min-height:52px}.btn{border:0;padding:14px 20px;font-weight:900;letter-spacing:.02em;cursor:pointer;transition:transform .15s,background .15s,opacity .15s}.btn:hover:not(:disabled){transform:translateY(-2px)}.btn:disabled{opacity:.35;cursor:not-allowed}.primary{background:var(--lime);color:#07110f;min-width:145px}.primary.fire{background:var(--orange);color:white}.secondary{background:rgba(255,255,255,.08);color:white;border:1px solid rgba(255,255,255,.12)}.spacer{flex:1}.ink-note{font-size:.76rem;color:var(--muted)}
+    .start-cover{position:absolute;inset:0;z-index:5;background:linear-gradient(135deg,rgba(4,13,11,.91),rgba(7,17,15,.72));display:grid;place-items:center;padding:24px;transition:opacity .4s,visibility .4s}.start-cover.hidden{opacity:0;visibility:hidden}.start-card{text-align:center;max-width:570px}.start-kicker{color:var(--lime);font-size:.8rem;font-weight:900;letter-spacing:.2em}.start-card h1{font-size:clamp(3.2rem,8vw,7.8rem);line-height:.82;letter-spacing:-.09em;margin:18px 0 22px}.start-card h1 em{display:block;color:var(--lime);font-family:Georgia,serif;font-weight:400}.start-card p{font-size:clamp(1rem,2vw,1.22rem);line-height:1.65;color:#c5cec8;margin:0 auto 26px}.start-card .btn{font-size:1.05rem;padding:17px 28px}.keys{margin-top:18px;color:#88968d;font-size:.75rem}
+    .final-cover{position:absolute;inset:0;z-index:6;background:rgba(4,13,11,.95);display:none;place-items:center;padding:26px}.final-cover.show{display:grid}.final-card{text-align:center;max-width:600px}.final-score{font-size:clamp(5rem,14vw,12rem);font-weight:1000;line-height:.8;color:var(--lime);letter-spacing:-.08em}.final-card h2{font-size:2rem;margin:24px 0 8px}.final-card p{color:var(--muted);line-height:1.6;margin:0 0 24px}
+    @media(max-width:780px){header{height:64px}.hud-item:first-child{display:none}main{grid-template-columns:1fr;display:flex;flex-direction:column;padding:12px}.brief{min-height:0;padding:18px;display:grid;grid-template-columns:1fr auto;gap:8px 18px}.shot-no{display:none}.shot-title{font-size:1.65rem;margin:5px 0}.shot-meta{font-size:.78rem}.rule,.stats,.brief-bottom{display:none}.clue{grid-row:1/3;grid-column:2;width:min(46vw,200px)}.clue p{font-size:.84rem}.game-shell{order:-1}.pitch{aspect-ratio:10/11}.pitch canvas{width:124%;max-width:none;height:auto;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}.controls{flex-wrap:wrap}.ink-note{display:none}.primary{flex:1}.stagebar{font-size:.9rem}.brand{font-size:1.1rem}.brand-mark{width:29px;height:29px}.hud{gap:12px}}
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="app">
+    <header>
+      <div class="brand"><div class="brand-mark"></div><div>门神<span>模拟器</span></div></div>
+      <div class="hud"><div class="hud-item"><span class="hud-label">挑战进度</span><span class="hud-value" id="progress">01 / 05</span></div><div class="hud-item"><span class="hud-label">扑救成功</span><span class="hud-value" id="score">0</span></div></div>
+    </header>
+    <main>
+      <aside class="brief">
+        <div class="eyebrow">Legendary shot archive</div>
+        <div class="shot-no" id="shotNo">01</div>
+        <div><h2 class="shot-title" id="shotTitle">飞火弧线</h2><div class="shot-meta" id="shotMeta">1997 · 里昂<br>左脚 · 35 米定位球</div></div>
+        <div class="rule"></div>
+        <div class="clue"><div class="clue-label">唯一线索</div><p id="shotClue">他站得离球很远，助跑角度大得不像要直接射门。</p></div>
+        <div class="stats"><div class="stat-row"><span>球速</span><div class="track"><i id="speedBar"></i></div><b id="speedVal">91</b></div><div class="stat-row"><span>旋转</span><div class="track"><i id="curveBar"></i></div><b id="curveVal">98</b></div><div class="stat-row"><span>欺骗性</span><div class="track"><i id="feintBar"></i></div><b id="feintVal">94</b></div></div>
+        <div class="brief-bottom"><p class="tiny">经典比赛射门的交互化重构。轨迹取材于真实名球，人物与场景采用原创表现。</p></div>
+      </aside>
+      <section class="game-shell">
+        <div class="stagebar"><div class="instruction" id="instruction">在球门里画出你的扑救姿势</div></div>
+        <div class="pitch" id="pitch">
+          <canvas id="canvas" width="1000" height="625" aria-label="在球门区域绘制门将扑救姿势"></canvas>
+          <div class="flash" id="flash"><div><div class="result-word" id="resultWord">神扑!</div><span class="result-sub" id="resultSub">指尖改变了球的方向</span></div></div>
+          <div class="start-cover" id="startCover"><div class="start-card"><div class="start-kicker">一笔决定球门的命运</div><h1>这一球<br><em>你来守</em></h1><p>根据线索画出门将扑救，等待球落地</p><button class="btn primary" id="startBtn">接受挑战</button><div class="keys">支持鼠标、触控笔和手指</div></div></div>
+          <div class="final-cover" id="finalCover"><div class="final-card"><div class="final-score" id="finalScore">3/5</div><h2 id="finalTitle">禁区守护者</h2><p id="finalCopy">五次预判，三次挡在了足球历史的轨迹上。</p><button class="btn primary" id="againBtn">再守一轮</button></div></div>
+        </div>
+        <div class="controls"><button class="btn secondary" id="undoBtn" disabled>撤销一笔</button><button class="btn secondary" id="clearBtn" disabled>清空</button><div class="spacer"></div><span class="ink-note" id="inkNote">可以画多笔，线条就是门将的身体</span><button class="btn primary fire" id="actionBtn" disabled>让足球飞</button></div>
+      </section>
+    </main>
+  </div>
+<script>
+const shots=[
+ {title:'飞火弧线',meta:'1997 · 里昂<br>35 米定位球',clue:'他以左脚出球，站得离球很远，助跑角度大得不像要直接射门。',history:'1997年6月3日，罗伯托·卡洛斯在法国四国邀请赛对阵法国时把球踢出；皮球先飞向门柱外侧，再急转回门，法比安·巴特兹只能目送它入网。',stats:[91,98,94],target:[.79,.45],bend:-.34,name:'外脚背超长弧线'},
+ {title:'横梁勺子',meta:'2006 · 柏林<br>决赛点球',clue:'他以右脚出球，助跑很短，最后一步突然放慢，眼睛一直盯着门将。',history:'2006年7月9日，齐内丁·齐达内在世界杯决赛面对意大利把点球挑向中路；球击中横梁下沿越过门线，吉安路易吉·布冯已经扑向一侧。',stats:[38,12,99],target:[.50,.14],bend:0,name:'决赛中的勺子点球'},
+ {title:'电梯坠落',meta:'2008 · 曼彻斯特<br>26 米定位球',clue:'他以右脚出球，几乎正对球站立，触球点会非常硬，球可能没有明显旋转。',history:'2008年1月30日，克里斯蒂亚诺·罗纳尔多在英超曼联对朴茨茅斯时把任意球踢出；皮球急升后下坠入网，门将大卫·詹姆斯几乎没有移动。',stats:[98,20,90],target:[.69,.21],bend:.08,name:'急升急坠的电梯球'},
+ {title:'逆足死角',meta:'2019 · 巴塞罗那<br>29 米定位球',clue:'他以左脚出球，人墙封住近角，但他似乎仍在看那片最拥挤的区域。',history:'2019年5月1日，莱昂内尔·梅西在欧冠半决赛首回合对利物浦把任意球踢出；皮球绕过人墙飞入阿利松把守的左上角，成为他为巴萨攻入的第600球。',stats:[79,92,96],target:[.18,.17],bend:.27,name:'越过人墙的内旋球'},
+ {title:'零度凌空',meta:'1988 · 慕尼黑<br>小角度凌空',clue:'他以右脚出球，传中正在越过后点；他没有停球，身体已经侧向球门。',history:'1988年6月25日，马尔科·范巴斯滕在欧洲杯决赛对苏联迎球凌空；皮球从极小角度越过里纳特·达萨耶夫落入远角，为荷兰锁定2比0。',stats:[94,70,88],target:[.84,.30],bend:-.1,name:'小角度凌空抽射'}
+];
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+const ui={progress:$('#progress'),score:$('#score'),shotNo:$('#shotNo'),title:$('#shotTitle'),meta:$('#shotMeta'),clue:$('#shotClue'),speed:$('#speedVal'),curve:$('#curveVal'),feint:$('#feintVal'),speedBar:$('#speedBar'),curveBar:$('#curveBar'),feintBar:$('#feintBar'),instruction:$('#instruction'),flash:$('#flash'),resultWord:$('#resultWord'),resultSub:$('#resultSub'),start:$('#startCover'),final:$('#finalCover'),finalScore:$('#finalScore'),finalTitle:$('#finalTitle'),finalCopy:$('#finalCopy'),undo:$('#undoBtn'),clear:$('#clearBtn'),action:$('#actionBtn'),ink:$('#inkNote')};
+function $(s){return document.querySelector(s)}
+let level=0,score=0,strokes=[],current=null,drawing=false,state='intro',anim=0,ball=null,trail=[];
+const goal={x:120,y:140,w:760,h:250};
+function loadShot(){const s=shots[level];ui.progress.textContent=String(level+1).padStart(2,'0')+' / 05';ui.score.textContent=score;ui.shotNo.textContent=String(level+1).padStart(2,'0');ui.title.textContent=s.title;ui.meta.innerHTML=s.meta;ui.clue.textContent=s.clue;[ui.speed,ui.curve,ui.feint].forEach((e,i)=>e.textContent=s.stats[i]);[ui.speedBar,ui.curveBar,ui.feintBar].forEach((e,i)=>e.style.transform=`scaleX(${s.stats[i]/100})`);strokes=[];trail=[];ball=null;state='draw';ui.instruction.textContent='在球门里画出你的扑救姿势';ui.instruction.classList.remove('history');ui.action.textContent='让足球飞';ui.action.disabled=true;ui.undo.disabled=true;ui.clear.disabled=true;ui.flash.classList.remove('show');drawScene()}
+function pitchBase(){ctx.clearRect(0,0,1000,625);let g=ctx.createLinearGradient(0,0,0,625);g.addColorStop(0,'#071a16');g.addColorStop(1,'#0d5135');ctx.fillStyle=g;ctx.fillRect(0,0,1000,625);ctx.strokeStyle='rgba(255,255,255,.11)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,530);ctx.lineTo(1000,530);ctx.stroke();ctx.fillStyle='rgba(0,0,0,.20)';ctx.fillRect(goal.x+10,goal.y+14,goal.w,goal.h);ctx.strokeStyle='rgba(244,246,237,.20)';ctx.lineWidth=1;for(let x=goal.x;x<=goal.x+goal.w;x+=44){ctx.beginPath();ctx.moveTo(x,goal.y);ctx.lineTo(x,goal.y+goal.h);ctx.stroke()}for(let y=goal.y;y<=goal.y+goal.h;y+=38){ctx.beginPath();ctx.moveTo(goal.x,y);ctx.lineTo(goal.x+goal.w,y);ctx.stroke()}ctx.strokeStyle='#f4f6ed';ctx.lineWidth=10;ctx.lineJoin='miter';ctx.strokeRect(goal.x,goal.y,goal.w,goal.h);ctx.strokeStyle='rgba(244,246,237,.28)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(500,530);ctx.lineTo(500,625);ctx.stroke();ctx.fillStyle='#f4f6ed';ctx.beginPath();ctx.arc(500,554,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(231,255,79,.8)';ctx.font='700 15px system-ui';ctx.textAlign='center';if(state==='draw'&&strokes.length===0&&!current)ctx.fillText('在球门框内自由画出门将',500,475)}
+function drawStrokes(){ctx.lineCap='round';ctx.lineJoin='round';[...strokes,current].filter(Boolean).forEach((stroke,si)=>{if(stroke.length<1)return;ctx.shadowColor=state==='draw'?'rgba(231,255,79,.45)':'rgba(255,255,255,.25)';ctx.shadowBlur=12;ctx.strokeStyle=state==='draw'?'#e7ff4f':'#f4f6ed';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(stroke[0].x,stroke[0].y);for(let i=1;i<stroke.length;i++)ctx.lineTo(stroke[i].x,stroke[i].y);ctx.stroke();ctx.shadowBlur=0})}
+function drawBall(x,y,r=14){ctx.save();ctx.shadowColor='rgba(255,106,61,.8)';ctx.shadowBlur=18;ctx.fillStyle='#f6f1de';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff6a3d';for(let a=0;a<5;a++){let ang=a*Math.PI*2/5-.5;ctx.beginPath();ctx.arc(x+Math.cos(ang)*r*.55,y+Math.sin(ang)*r*.55,r*.17,0,Math.PI*2);ctx.fill()}ctx.restore()}
+function drawScene(){pitchBase();drawStrokes();if(trail.length){ctx.strokeStyle='rgba(255,106,61,.45)';ctx.lineWidth=5;ctx.setLineDash([7,12]);ctx.beginPath();ctx.moveTo(trail[0].x,trail[0].y);trail.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();ctx.setLineDash([])}if(ball)drawBall(ball.x,ball.y,ball.r||14)}
+function pos(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*1000/r.width,y:(e.clientY-r.top)*625/r.height}}
+function valid(p){return p.x>goal.x+8&&p.x<goal.x+goal.w-8&&p.y>goal.y+8&&p.y<goal.y+goal.h-5}
+canvas.addEventListener('pointerdown',e=>{if(state!=='draw')return;const p=pos(e);if(!valid(p))return;drawing=true;current=[p];canvas.setPointerCapture(e.pointerId);drawScene()});
+canvas.addEventListener('pointermove',e=>{if(!drawing||state!=='draw')return;const p=pos(e);if(!valid(p))return;const last=current[current.length-1];if(Math.hypot(p.x-last.x,p.y-last.y)>3){current.push(p);drawScene()}});
+function endDraw(){if(!drawing)return;drawing=false;if(current&&current.length>1)strokes.push(current);current=null;updateButtons();drawScene()}
+canvas.addEventListener('pointerup',endDraw);canvas.addEventListener('pointercancel',endDraw);
+function updateButtons(){const has=strokes.length>0;ui.undo.disabled=!has;ui.clear.disabled=!has;ui.action.disabled=!has}
+ui.undo.onclick=()=>{if(state!=='draw')return;strokes.pop();updateButtons();drawScene()};ui.clear.onclick=()=>{if(state!=='draw')return;strokes=[];updateButtons();drawScene()};
+function distSeg(px,py,a,b){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;if(!l)return Math.hypot(px-a.x,py-a.y);let t=((px-a.x)*dx+(py-a.y)*dy)/l;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(a.x+t*dx),py-(a.y+t*dy))}
+function nearest(px,py){let d=999;strokes.forEach(s=>{for(let i=1;i<s.length;i++)d=Math.min(d,distSeg(px,py,s[i-1],s[i]))});return d}
+function ease(t){return 1-Math.pow(1-t,3)}
+function shoot(){if(state!=='draw'||!strokes.length)return;state='shoot';ui.instruction.textContent='射门已经离脚…';ui.undo.disabled=ui.clear.disabled=ui.action.disabled=true;const s=shots[level],end={x:goal.x+s.target[0]*goal.w,y:goal.y+s.target[1]*goal.h},start={x:500,y:590};let startTime=null;trail=[];function frame(ts){if(!startTime)startTime=ts;let raw=Math.min(1,(ts-startTime)/(1250-s.stats[0]*4));let t=ease(raw),arc=Math.sin(t*Math.PI)*s.bend*260;let x=start.x+(end.x-start.x)*t+arc,y=start.y+(end.y-start.y)*t-Math.sin(t*Math.PI)*90;ball={x,y,r:14};if(!trail.length||Math.hypot(x-trail.at(-1).x,y-trail.at(-1).y)>9)trail.push({x,y});drawScene();if(raw<1)anim=requestAnimationFrame(frame);else resolveShot(end)}anim=requestAnimationFrame(frame)}
+function resolveShot(end){const d=nearest(end.x,end.y);let saved=d<=34,touched=!saved&&d<=54;if(saved)score++;ui.score.textContent=score;state='result';ui.resultWord.className='result-word '+(saved?'save':'goal');ui.resultWord.textContent=saved?(d<17?'神扑!':'扑出!'):(touched?'差一点!':'进球!');ui.resultSub.textContent=saved?(d<17?'正面封死，没有任何机会':'指尖改变了足球的命运'):(touched?'碰到了，但球还是钻进网窝':shots[level].name+' · 距离 '+Math.round(d)+'px');setTimeout(()=>ui.flash.classList.add('show'),220);ui.instruction.textContent=shots[level].history;ui.instruction.classList.add('history');ui.action.disabled=false;ui.action.textContent=level===shots.length-1?'查看战绩':'下一球';ui.action.classList.remove('fire')}
+function next(){if(state==='draw')shoot();else if(state==='result'){ui.flash.classList.remove('show');ui.action.classList.add('fire');if(level<shots.length-1){level++;setTimeout(loadShot,260)}else showFinal()}}
+ui.action.onclick=next;
+function showFinal(){state='final';ui.finalScore.textContent=score+'/5';let title=score===5?'吾名叹息之墙':score>=3?'差一步零封':score>=1?'只是脱手而已':'二门和一门的距离……';ui.finalTitle.textContent=title;ui.finalCopy.textContent=`五次预判，你挡住了 ${score} 次足球史的轨迹……如果这是真的就好了。`;ui.final.classList.add('show')}
+$('#startBtn').onclick=()=>{ui.start.classList.add('hidden');loadShot()};$('#againBtn').onclick=()=>{level=0;score=0;ui.final.classList.remove('show');loadShot()};
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&!ui.action.disabled){e.preventDefault();next()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&!ui.undo.disabled){e.preventDefault();ui.undo.click()}});
+drawScene();
+</script>
+</body>
+</html>
